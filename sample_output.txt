@@ -1,0 +1,92 @@
+Real run on sysadmin-host (Ubuntu 22.04.5 LTS, aarch64, 2 vCPU / 2 GiB).
+
+== 1. three snapshots, 5s apart ==
+
+$ ./script.sh 3
+monitoring 3 snapshot(s) every 5s -> /home/ubuntu/my-sysadmin-scripts/monitor.log
+done: 3 snapshot(s) -> /home/ubuntu/my-sysadmin-scripts/monitor.log
+
+$ cat monitor.log
+--- 2026-09-10 16:37:48 ---
+[free -h]
+               total        used        free      shared  buff/cache   available
+Mem:           1.9Gi       210Mi       747Mi       1.0Mi       1.0Gi       1.6Gi
+Swap:          3.8Gi          0B       3.8Gi
+
+[df -h]
+Filesystem                         Size  Used Avail Use% Mounted on
+tmpfs                              197M  1.2M  196M   1% /run
+/dev/mapper/ubuntu--vg-ubuntu--lv   30G  6.1G   23G  22% /
+tmpfs                              984M     0  984M   0% /dev/shm
+tmpfs                              5.0M     0  5.0M   0% /run/lock
+/dev/sda2                          2.0G  124M  1.7G   7% /boot
+/dev/sda1                          1.1G  6.4M  1.1G   1% /boot/efi
+tmpfs                              197M  4.0K  197M   1% /run/user/1001
+
+[uptime]
+ 16:37:48 up  3:42,  1 user,  load average: 0.00, 0.00, 0.00
+
+--- 2026-09-10 16:37:53 ---
+[free -h]
+               total        used        free      shared  buff/cache   available
+Mem:           1.9Gi       210Mi       747Mi       1.0Mi       1.0Gi       1.6Gi
+Swap:          3.8Gi          0B       3.8Gi
+
+[df -h]
+Filesystem                         Size  Used Avail Use% Mounted on
+tmpfs                              197M  1.2M  196M   1% /run
+/dev/mapper/ubuntu--vg-ubuntu--lv   30G  6.1G   23G  22% /
+tmpfs                              984M     0  984M   0% /dev/shm
+tmpfs                              5.0M     0  5.0M   0% /run/lock
+/dev/sda2                          2.0G  124M  1.7G   7% /boot
+/dev/sda1                          1.1G  6.4M  1.1G   1% /boot/efi
+tmpfs                              197M  4.0K  197M   1% /run/user/1001
+
+[uptime]
+ 16:37:53 up  3:42,  1 user,  load average: 0.00, 0.00, 0.00
+
+--- 2026-09-10 16:37:58 ---
+[free -h]
+               total        used        free      shared  buff/cache   available
+Mem:           1.9Gi       210Mi       747Mi       1.0Mi       1.0Gi       1.6Gi
+Swap:          3.8Gi          0B       3.8Gi
+
+[df -h]
+Filesystem                         Size  Used Avail Use% Mounted on
+tmpfs                              197M  1.2M  196M   1% /run
+/dev/mapper/ubuntu--vg-ubuntu--lv   30G  6.1G   23G  22% /
+tmpfs                              984M     0  984M   0% /dev/shm
+tmpfs                              5.0M     0  5.0M   0% /run/lock
+/dev/sda2                          2.0G  124M  1.7G   7% /boot
+/dev/sda1                          1.1G  6.4M  1.1G   1% /boot/efi
+tmpfs                              197M  4.0K  197M   1% /run/user/1001
+
+[uptime]
+ 16:37:58 up  3:42,  1 user,  load average: 0.00, 0.00, 0.00
+
+
+== 2. stopping the loop with a signal after 7s ==
+
+$ timeout -s INT 7 ./script.sh
+monitoring every 5s -> /home/ubuntu/my-sysadmin-scripts/monitor.log (Ctrl+C to stop)
+
+$ tail -3 monitor.log
+ 16:38:03 up  3:43,  1 user,  load average: 0.00, 0.00, 0.00
+
+--- monitor stopped 2026-09-10 16:38:05 ---
+
+== 3. error handling ==
+
+$ ./script.sh abc
+error: snapshot count must be a non-negative integer, got 'abc'
+usage: ./script.sh [snapshots]
+exit: 2
+
+$ MONITOR_LOG=/root/forbidden.log ./script.sh 1
+error: cannot write to /root/forbidden.log
+exit: 3
+
+$ MONITOR_LOG=/tmp/nested/dir/monitor.log ./script.sh 1   # directory created on demand
+monitoring 1 snapshot(s) every 5s -> /tmp/nested/dir/monitor.log
+done: 1 snapshot(s) -> /tmp/nested/dir/monitor.log
+exit: 0
